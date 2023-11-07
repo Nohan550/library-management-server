@@ -1,14 +1,22 @@
 const express = require("express");
 const cors = require("cors");
 const { MongoClient, ServerApiVersion } = require("mongodb");
+const jwt=require('jsonwebtoken')
+const cookieParser =require('cookie-parser')
 require('dotenv').config();
 const app = express();
 const port = process.env.PORT || 5500;
 
 app.use(express.json());
-app.use(cors());
-// admin5500
-//ZUHVrW85UdNVG4Lq
+app.use(cookieParser())
+app.use(cors(
+//  {
+//   origin:'http://localhost:5173/',
+//   Credential: true,
+   
+//  }
+));
+
 
 const uri =
   `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.bix9lir.mongodb.net/?retryWrites=true&w=majority`;
@@ -27,6 +35,18 @@ async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
+
+         const database =client.db('libraryDB');
+         const category = database.collection("category")
+
+              app.get('/category', async (req,res)=>{
+                const cursor = category.find()
+                const result = await cursor.toArray()
+                res.send(result)
+              })
+ 
+
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Successful ping and connection");
