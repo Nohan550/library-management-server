@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const jwt = require("jsonwebtoken");
 const cookieParser = require("cookie-parser");
 require("dotenv").config();
@@ -11,7 +11,10 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(
   cors({
-    origin: ["http://localhost:5173",'https://library-management-5ee04.web.app'],
+    origin: [
+      "http://localhost:5173",
+      "https://library-management-5ee04.web.app",
+    ],
     Credential: true,
   })
 );
@@ -36,7 +39,7 @@ async function run() {
     const database = client.db("libraryDB");
     const category = database.collection("category");
     const categoryBooks = database.collection("Books");
-    const borrowedBooks = database.collection('borrowed')
+    const borrowedBooks = database.collection("borrowed");
 
     app.get("/category", async (req, res) => {
       const cursor = category.find();
@@ -47,6 +50,11 @@ async function run() {
       const cursor = await categoryBooks.find().toArray();
 
       res.send(cursor);
+    });
+    app.post("/category/books", async (req, res) => {
+      const Book = req.body;
+      const result = await categoryBooks.insertOne(Book);
+      res.send(result);
     });
     app.get("/category/books/:name", async (req, res) => {
       const name = req.params.name;
@@ -79,16 +87,23 @@ async function run() {
 
       res.send(cursor);
     });
-    app.get("/borrowedBooks", async(req,res)=>{
-       const cursor = borrowedBooks.find();
-       const result = await cursor.toArray()
-       res.send(result)
-    })
-    app.post("/borrowedBooks", async(req,res)=>{
-       const borrowedBook = req.body;
-       const result = await borrowedBooks.insertOne(borrowedBook)
-       res.send(result)
-    })
+    app.get("/borrowedBooks", async (req, res) => {
+      const cursor = borrowedBooks.find();
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+    app.post("/borrowedBooks", async (req, res) => {
+      const borrowedBook = req.body;
+      const result = await borrowedBooks.insertOne(borrowedBook);
+      res.send(result);
+    });
+    app.delete("/borrowedBooks/:id", async (req, res) => {
+      const id = req.params.id;
+      console.log(id);
+      const query = { _id: new ObjectId(id) };
+      const result = await borrowedBooks.deleteOne(query);
+      res.send(result);
+    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
