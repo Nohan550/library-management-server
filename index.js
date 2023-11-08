@@ -10,12 +10,10 @@ const port = process.env.PORT || 5500;
 app.use(express.json());
 app.use(cookieParser());
 app.use(
-  cors()
-  //  {
-  //   origin:'http://localhost:5173/',
-  //   Credential: true,
-
-  //  }
+  cors({
+    origin: ["http://localhost:5173",'https://library-management-5ee04.web.app'],
+    Credential: true,
+  })
 );
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.bix9lir.mongodb.net/?retryWrites=true&w=majority`;
@@ -45,21 +43,40 @@ async function run() {
       res.send(result);
     });
     app.get("/category/books", async (req, res) => {
-     
-    
       const cursor = await categoryBooks.find().toArray();
-    /
+
       res.send(cursor);
-      
+    });
+    app.get("/category/books/:name", async (req, res) => {
+      const name = req.params.name;
+      const query = { name: name };
+      const book = await categoryBooks.findOne(query);
+      res.send(book);
+    });
+    app.patch("/category/books/:name", async (req, res) => {
+      const name = req.params.name;
+      const book = req.body;
+
+      const filter = { name: name };
+      const options = { upsert: true };
+      const updateBook = {
+        $set: {
+          name: book.name,
+          image: book.image,
+          category: book.category,
+          author: book.author,
+          rating: book.rating,
+        },
+      };
+      const result = await categoryBooks.updateOne(filter, updateBook, options);
+      res.send(result);
     });
     app.get("/category/:category_name", async (req, res) => {
-      // console.log(req.params.category_name);
       const category_name = req.params.category_name;
       const query = { category: category_name };
       const cursor = await categoryBooks.find(query).toArray();
-      // const result = await cursor.toArray()
+
       res.send(cursor);
-      // res.send(result)
     });
 
     // Send a ping to confirm a successful connection
