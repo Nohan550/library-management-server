@@ -1,25 +1,24 @@
 const express = require("express");
 const cors = require("cors");
 const { MongoClient, ServerApiVersion } = require("mongodb");
-const jwt=require('jsonwebtoken')
-const cookieParser =require('cookie-parser')
-require('dotenv').config();
+const jwt = require("jsonwebtoken");
+const cookieParser = require("cookie-parser");
+require("dotenv").config();
 const app = express();
 const port = process.env.PORT || 5500;
 
 app.use(express.json());
-app.use(cookieParser())
-app.use(cors(
-//  {
-//   origin:'http://localhost:5173/',
-//   Credential: true,
-   
-//  }
-));
+app.use(cookieParser());
+app.use(
+  cors()
+  //  {
+  //   origin:'http://localhost:5173/',
+  //   Credential: true,
 
+  //  }
+);
 
-const uri =
-  `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.bix9lir.mongodb.net/?retryWrites=true&w=majority`;
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.bix9lir.mongodb.net/?retryWrites=true&w=majority`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 
@@ -36,16 +35,32 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
 
-         const database =client.db('libraryDB');
-         const category = database.collection("category")
+    const database = client.db("libraryDB");
+    const category = database.collection("category");
+    const categoryBooks = database.collection("Books");
 
-              app.get('/category', async (req,res)=>{
-                const cursor = category.find()
-                const result = await cursor.toArray()
-                res.send(result)
-              })
- 
-
+    app.get("/category", async (req, res) => {
+      const cursor = category.find();
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+    app.get("/category/books", async (req, res) => {
+     
+    
+      const cursor = await categoryBooks.find().toArray();
+    /
+      res.send(cursor);
+      
+    });
+    app.get("/category/:category_name", async (req, res) => {
+      // console.log(req.params.category_name);
+      const category_name = req.params.category_name;
+      const query = { category: category_name };
+      const cursor = await categoryBooks.find(query).toArray();
+      // const result = await cursor.toArray()
+      res.send(cursor);
+      // res.send(result)
+    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
