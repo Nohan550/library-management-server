@@ -14,6 +14,7 @@ app.use(
     origin: [
       "http://localhost:5173",
       "https://library-management-5ee04.web.app",
+      "https://library-management-5ee04.firebaseapp.com",
     ],
     Credential: true,
   })
@@ -91,6 +92,13 @@ async function run() {
       const cursor = borrowedBooks.find();
       const result = await cursor.toArray();
       res.send(result);
+    });
+    app.get("/borrowedBooks/:book_name", async (req, res) => {
+      const name = req.params.book_name;
+      const query = { book_name: name };
+      console.log(req.params);
+      const cursor = await borrowedBooks.findOne( query);
+      res.send(cursor);
     });
     app.post("/borrowedBooks", async (req, res) => {
       const borrowedBook = req.body;
