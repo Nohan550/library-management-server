@@ -12,9 +12,10 @@ app.use(cookieParser());
 app.use(
   cors({
     origin: [
-      "http://localhost:5173",
-      "https://library-management-5ee04.web.app",
-      "https://library-management-5ee04.firebaseapp.com",
+      
+      'http://localhost:5173',
+      'https://library-management-5ee04.web.app',
+      'https://library-management-5ee04.firebaseapp.com',
     ],
     Credential: true,
   })
@@ -42,12 +43,30 @@ async function run() {
     const categoryBooks = database.collection("Books");
     const borrowedBooks = database.collection("borrowed");
 
+
+    // auth token
+   app.post('/jwt',async(req,res)=>{
+    const user =req.body
+    console.log(user)
+    const token = jwt.sign(user,process.env.ACCESS_TOKEN,{expiresIn:'2h'})
+    res
+    .cookie('token',token,{
+      httpOnly:true,
+      secure:false,
+      // sameSite:"none"
+    }).send({success:true})
+   })
+
+
+     // library
+
     app.get("/category", async (req, res) => {
       const cursor = category.find();
       const result = await cursor.toArray();
       res.send(result);
     });
     app.get("/category/books", async (req, res) => {
+
       const cursor = await categoryBooks.find().toArray();
 
       res.send(cursor);
@@ -88,21 +107,39 @@ async function run() {
 
       res.send(cursor);
     });
-    app.get("/borrowedBooks", async (req, res) => {
-      const cursor = borrowedBooks.find();
+     app.get("/borrowedBooks", async (req, res) => {
+      let query ={}
+      if(req.query?.email){
+        query={email:req.query.email}
+      }
+      console.log(query)
+      const cursor = borrowedBooks.find(query);
       const result = await cursor.toArray();
       res.send(result);
     });
     app.get("/borrowedBooks/:book_name", async (req, res) => {
       const name = req.params.book_name;
       const query = { book_name: name };
-      console.log(req.params);
+   
       const cursor = await borrowedBooks.findOne( query);
       res.send(cursor);
     });
     app.post("/borrowedBooks", async (req, res) => {
       const borrowedBook = req.body;
       const result = await borrowedBooks.insertOne(borrowedBook);
+      res.send(result);
+    });
+    app.patch("/category/book/:name", async (req, res) => {
+      const name = req.params.name;
+      const book = req.body;
+      const filter = { name: name };
+      const options = { upsert: true };
+      const updateBook = {
+        $set: {
+               quantity:book.quantity
+        },
+      };
+      const result = await categoryBooks.updateOne(filter, updateBook, options);
       res.send(result);
     });
     app.delete("/borrowedBooks/:id", async (req, res) => {
