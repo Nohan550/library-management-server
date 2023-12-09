@@ -7,19 +7,20 @@ require("dotenv").config();
 const app = express();
 const port = process.env.PORT || 5500;
 
-app.use(express.json());
-app.use(cookieParser());
+
+
 app.use(
   cors({
     origin: [
-      
       'http://localhost:5173',
-      'https://library-management-5ee04.web.app',
-      'https://library-management-5ee04.firebaseapp.com',
+      'https://library-management-5ee04.web.app'
     ],
-    Credential: true,
+    credentials:true
   })
 );
+app.use(express.json());
+app.use(cookieParser());
+
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.bix9lir.mongodb.net/?retryWrites=true&w=majority`;
 
@@ -36,7 +37,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
 
     const database = client.db("libraryDB");
     const category = database.collection("category");
@@ -48,13 +49,16 @@ async function run() {
    app.post('/jwt',async(req,res)=>{
     const user =req.body
     console.log(user)
-    const token = jwt.sign(user,process.env.ACCESS_TOKEN,{expiresIn:'2h'})
-    res
-    .cookie('token',token,{
+    const token = jwt.sign(user,process.env.ACCESS_TOKEN,{expiresIn:'1h'})
+    res.cookie('token',token,{
       httpOnly:true,
-      secure:false,
-      // sameSite:"none"
-    }).send({success:true})
+      // secure:true,
+      // sameSite:"strict"
+      secure:process.eventNames.NODE_ENV === 'production'? true: false,
+      sameSite:process.env.NODE_ENV === 'production'?'none' : 'strict',
+    }).send(
+        {success:true}
+        )
    })
 
 
@@ -87,7 +91,7 @@ async function run() {
       const book = req.body;
 
       const filter = { name: name };
-      const options = { upsert: true };
+    
       const updateBook = {
         $set: {
           name: book.name,
@@ -97,7 +101,7 @@ async function run() {
           rating: book.rating,
         },
       };
-      const result = await categoryBooks.updateOne(filter, updateBook, options);
+      const result = await categoryBooks.updateOne(filter, updateBook);
       res.send(result);
     });
     app.get("/category/:category_name", async (req, res) => {
