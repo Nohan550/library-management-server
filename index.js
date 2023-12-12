@@ -7,20 +7,17 @@ require("dotenv").config();
 const app = express();
 const port = process.env.PORT || 5500;
 
-
-
 app.use(
   cors({
     origin: [
-      'http://localhost:5173',
-      'https://library-management-5ee04.web.app'
+      "http://localhost:5173",
+      "https://library-management-5ee04.web.app",
     ],
-    credentials:true
+    credentials: true,
   })
 );
 app.use(express.json());
 app.use(cookieParser());
-
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.bix9lir.mongodb.net/?retryWrites=true&w=majority`;
 
@@ -44,25 +41,25 @@ async function run() {
     const categoryBooks = database.collection("Books");
     const borrowedBooks = database.collection("borrowed");
 
-
     // auth token
-   app.post('/jwt',async(req,res)=>{
-    const user =req.body
-    console.log(user)
-    const token = jwt.sign(user,process.env.ACCESS_TOKEN,{expiresIn:'1h'})
-    res.cookie('token',token,{
-      httpOnly:true,
-      // secure:true,
-      // sameSite:"strict"
-      secure:process.eventNames.NODE_ENV === 'production'? true: false,
-      sameSite:process.env.NODE_ENV === 'production'?'none' : 'strict',
-    }).send(
-        {success:true}
-        )
-   })
+    app.post("/jwt", async (req, res) => {
+      const user = req.body;
+      console.log(user);
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN, {
+        expiresIn: "1h",
+      });
+      res
+        .cookie("token", token, {
+          httpOnly: true,
+          // secure:true,
+          // sameSite:"strict"
+          secure: process.eventNames.NODE_ENV === "production" ? true : false,
+          sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+        })
+        .send({ success: true });
+    });
 
-
-     // library
+    // library
 
     app.get("/category", async (req, res) => {
       const cursor = category.find();
@@ -70,10 +67,17 @@ async function run() {
       res.send(result);
     });
     app.get("/category/books", async (req, res) => {
-
+     
+      if (req.query.filter === 'true') {
+        const query = {
+          quantity: { $gt: 0 },
+        };
+        console.log(query);
+        const cursor = await categoryBooks.find(query).toArray();
+        return res.send(cursor);
+      }
       const cursor = await categoryBooks.find().toArray();
-
-      res.send(cursor);
+      return res.send(cursor);
     });
     app.post("/category/books", async (req, res) => {
       const Book = req.body;
@@ -91,7 +95,7 @@ async function run() {
       const book = req.body;
 
       const filter = { name: name };
-    
+
       const updateBook = {
         $set: {
           name: book.name,
@@ -111,12 +115,12 @@ async function run() {
 
       res.send(cursor);
     });
-     app.get("/borrowedBooks", async (req, res) => {
-      let query ={}
-      if(req.query?.email){
-        query={email:req.query.email}
+    app.get("/borrowedBooks", async (req, res) => {
+      let query = {};
+      if (req.query?.email) {
+        query = { email: req.query.email };
       }
-      console.log(query)
+      console.log(query);
       const cursor = borrowedBooks.find(query);
       const result = await cursor.toArray();
       res.send(result);
@@ -124,8 +128,8 @@ async function run() {
     app.get("/borrowedBooks/:book_name", async (req, res) => {
       const name = req.params.book_name;
       const query = { book_name: name };
-   
-      const cursor = await borrowedBooks.findOne( query);
+
+      const cursor = await borrowedBooks.findOne(query);
       res.send(cursor);
     });
     app.post("/borrowedBooks", async (req, res) => {
@@ -140,7 +144,7 @@ async function run() {
       const options = { upsert: true };
       const updateBook = {
         $set: {
-               quantity:book.quantity
+          quantity: book.quantity,
         },
       };
       const result = await categoryBooks.updateOne(filter, updateBook, options);
